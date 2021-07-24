@@ -43,15 +43,16 @@ class Market:
         return price_equilibrium
 
     def allocate_commodity(self):
-        actions_copy = deepcopy(self.actions)
+        # apply allocation rule here
         sell_actions = []
         buy_actions = []
 
-        for action in actions_copy:
+        for action in self.actions:
+            new_action = MarketAction(action_type=action.type, amount=action.amount, bid=action.bid, agent=action.agent)
             if action.type == ActionType.Buy.value:
-                buy_actions.append(action)
+                buy_actions.append(new_action)
             elif action.type == ActionType.Sell.value:
-                sell_actions.append(action)
+                sell_actions.append(new_action)
 
         sell_actions = sorted(sell_actions, key=lambda x: x.bid)
         buy_actions = sorted(buy_actions, key=lambda x: -x.bid)
