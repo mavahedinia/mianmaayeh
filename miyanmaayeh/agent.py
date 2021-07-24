@@ -9,11 +9,11 @@ from miyanmaayeh.history import AgentHistory, MarketHistory
 class Agent:
     def __init__(self, confidence_level, production, inventory, income, cash):
         self.confidence_level = confidence_level
-        self.noise_generator = np.random.default_rng(time.time())
+        self.noise_generator = np.random.default_rng(int(time.time() * 10000))
         self.ng_std = (1 - self.confidence_level) / 6
         self.production = production
         self.inventory = inventory
-        self.wage = income
+        self.income = income
         self.cash = cash
         self.history = []
 
@@ -35,7 +35,10 @@ class Agent:
         market_price_history = self.apply_perception_on_market_prices(market_price_history)
 
         perceived_market_history = [
-            MarketHistory(price, item.sell_action_count, item.buy_action_count) for price, item in zip(market_price_history, market_history)
+            MarketHistory(
+                price_equilibrium=price, sell_actions=item.sell_action_count, buy_actions=item.buy_action_count, volume=item.volume
+            )
+            for price, item in zip(market_price_history, market_history)
         ]
 
         result = self.analyze(perceived_market_history)
@@ -49,7 +52,12 @@ class Agent:
         elif result.type == ActionType.Sell.value:
             result.amount = int(self.confidence_level * self.inventory)
 
-        history = AgentHistory(type=result.type, bid=result.bid)
+        if result.amount <= 0:
+            result.type = ActionType.Skip.value
+            result.amount = 0
+            result.bid = 0
+
+        history = AgentHistory(action_type=result.type, bid=result.bid)
         self.history.append(history)
 
         return result
@@ -66,8 +74,12 @@ class Agent:
 class FundamentalistAgent(Agent):
     def analyze(self, market_history):
         market_indicator = np.random.rand(1) * 3
+        bid = np.random.uniform(50, 100)
+        if len(market_history) > 0:
+            bid = market_history[-1].price_equilibrium
+
         if market_indicator > 2:
-            return MarketAction(action_type=ActionType.Buy.value, agent=self, amount=0, bid=market_history.price_equilibrium[-1])
+            return MarketAction(action_type=ActionType.Buy.value, agent=self, amount=0, bid=bid)
         elif market_indicator > 1:
-            return MarketAction(action_type=ActionType.Skip.value, agent=self)
-        return MarketAction(action_type=ActionType.Sell.value, agent=self, amount=0, bid=market_history.price_equilibrium[-1])
+            return MarketAction(action_type=ActionType.Skip.value, agent=self, amount=0, bid=0)
+        return MarketAction(action_type=ActionType.Sell.value, agent=self, amount=0, bid=bid)

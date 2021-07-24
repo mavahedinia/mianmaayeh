@@ -3,8 +3,8 @@ from miyanmaayeh.history import MarketHistory
 
 
 class Market:
-    def __init__(self) -> None:
-        self.initial_price = 1000
+    def __init__(self, initial_price=1000) -> None:
+        self.initial_price = initial_price
         self.history = []
         self.actions = []
 
@@ -21,8 +21,8 @@ class Market:
         sorted_actions = sorted(self.actions, key=lambda x: -x.bid if x.type == ActionType.Buy.value else x.bid)
         qs = 0
         qd = 0
-        best_q = -1
-        price_equilibrium = -1
+        best_q = 0
+        price_equilibrium = 1
         for action in sorted_actions:
             if action.type == ActionType.Buy.value:
                 qd += action.amount
@@ -61,10 +61,12 @@ class Market:
         sell_action_idx = 0
         buy_action_idx = 0
 
-        while sell_actions[sell_action_idx].bid > market_price or buy_actions[buy_action_idx].bid < market_price:
+        while True:
             if sell_action_idx >= len(sell_actions):
                 break
             if buy_action_idx >= len(buy_actions):
+                break
+            if sell_actions[sell_action_idx].bid > market_price or buy_actions[buy_action_idx].bid < market_price:
                 break
 
             amount = min(sell_actions[sell_action_idx].amount, buy_actions[buy_action_idx].amount)
