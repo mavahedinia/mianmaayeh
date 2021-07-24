@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from tqdm import tqdm
 
 from miyanmaayeh.action import ActionType
 from miyanmaayeh.agent import Agent, FundamentalistAgent
@@ -33,7 +34,6 @@ class Runner:
             if production < 0 or not is_producer:
                 production = 0
 
-            # income = np.random.normal(5000, 1000)
             income = np.random.gamma(4, 1500)
             if income < 1000:
                 income = 1000
@@ -48,7 +48,7 @@ class Runner:
             self.agents.append(agent)
 
     def run(self, ticks):
-        for tick in range(ticks):
+        for tick in tqdm(range(ticks)):
             self.market.new_tick()
             for agent in self.agents:
                 agent.tick()
@@ -100,7 +100,6 @@ class Runner:
         demand_actions = sorted(demand_actions, key=lambda x: -x.bid)
         supply_actions = sorted(supply_actions, key=lambda x: x.bid)
 
-        # q_d = sum(map(lambda x: x.amount, demand_actions))
         q_d = 0
         demand_series = []
         for demand in demand_actions:
@@ -122,7 +121,7 @@ class Runner:
         self.generate_wealth_plot()
         self.generate_volume_plot()
 
-        # self.generate_demand_supply_facet()
+        self.generate_demand_supply_facet()
 
     def generate_price_plot(self):
         prices = [item.price for item in self.history]
@@ -150,3 +149,21 @@ class Runner:
         fig.set(xlabel="Time", ylabel="Quantity", title="Market Volume")
 
         plt.savefig(self.plot_dir + "volume.png")
+
+    def generate_demand_supply_facet(self):
+        for tick in self.take_snapshots_in:
+            if tick >= len(self.history):
+                break
+
+            output_file = self.plot_dir + f"sd_{tick}"
+            demands = self.history[tick].demands
+            supplies = self.history[tick].supplies
+
+            plt.figure(output_file)
+
+            fig = sns.lineplot(x=[x[0] for x in demands], y=[x[1] for x in demands])
+            sns.lineplot(x=[x[0] for x in supplies], y=[x[1] for x in supplies])
+
+            fig.set(xlabel="Price", ylabel="Quantity", title=f"Supply - Demand plot at {tick}")
+
+            plt.savefig(output_file)
