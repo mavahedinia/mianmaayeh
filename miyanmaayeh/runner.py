@@ -161,8 +161,8 @@ class Runner:
 
             plt.figure(output_file)
 
-            fig = sns.lineplot(x=[x[0] for x in demands], y=[x[1] for x in demands])
-            sns.lineplot(x=[x[0] for x in supplies], y=[x[1] for x in supplies])
+            fig = sns.lineplot(x=[x[0] for x in demands], y=[x[1] for x in demands], legend="brief", label="Demand")
+            sns.lineplot(x=[x[0] for x in supplies], y=[x[1] for x in supplies], label="Supply")
 
             fig.set(xlabel="Price", ylabel="Quantity", title=f"Supply - Demand plot at {tick}")
 
