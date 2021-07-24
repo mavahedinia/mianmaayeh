@@ -61,3 +61,13 @@ class Agent:
         elif action.type == ActionType.Sell.value:
             self.inventory -= action.amount
             self.cash += action.price * action.amount
+
+
+class FundamentalistAgent(Agent):
+    def analyze(self, market_history):
+        market_indicator = np.random.rand(1) * 3
+        if market_indicator > 2:
+            return MarketAction(action_type=ActionType.Buy.value, agent=self, amount=0, bid=market_history.price_equilibrium[-1])
+        elif market_indicator > 1:
+            return MarketAction(action_type=ActionType.Skip.value, agent=self)
+        return MarketAction(action_type=ActionType.Sell.value, agent=self, amount=0, bid=market_history.price_equilibrium[-1])
