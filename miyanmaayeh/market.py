@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from miyanmaayeh.action import ActionType, AgentAction, MarketAction
 from miyanmaayeh.history import MarketHistory
 
@@ -22,7 +24,7 @@ class Market:
         qs = 0
         qd = 0
         best_q = 0
-        price_equilibrium = 1
+        price_equilibrium = 0
         for action in sorted_actions:
             if action.type == ActionType.Buy.value:
                 qd += action.amount
@@ -33,7 +35,7 @@ class Market:
                 best_q = min(qs, qd)
                 price_equilibrium = action.bid
 
-        return price_equilibrium
+        return max(1, price_equilibrium)
 
     def calculate_market_price(self):
         # apply price regualtions here
@@ -41,17 +43,18 @@ class Market:
         return price_equilibrium
 
     def allocate_commodity(self):
+        actions_copy = deepcopy(self.actions)
         sell_actions = []
         buy_actions = []
 
-        for action in self.actions:
+        for action in actions_copy:
             if action.type == ActionType.Buy.value:
                 buy_actions.append(action)
             elif action.type == ActionType.Sell.value:
                 sell_actions.append(action)
 
         sell_actions = sorted(sell_actions, key=lambda x: x.bid)
-        buy_actions = sorted(sell_actions, key=lambda x: -x.bid)
+        buy_actions = sorted(buy_actions, key=lambda x: -x.bid)
 
         market_price = self.calculate_market_price()
         market_q = 0
@@ -85,6 +88,9 @@ class Market:
                 price=market_price,
             )
             sell_actions[sell_action_idx].agent.apply_action(seller_agent_action)
+
+            buy_actions[buy_action_idx].amount -= amount
+            sell_actions[sell_action_idx].amount -= amount
 
             if buy_actions[buy_action_idx].amount >= sell_actions[sell_action_idx].amount:
                 sell_action_idx += 1
