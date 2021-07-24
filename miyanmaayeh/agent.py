@@ -28,7 +28,7 @@ class Agent:
         return (noise * market_prices).tolist()
 
     def analyze(self, market_history) -> MarketAction:
-        return MarketAction(action_type=ActionType.skip.value, amount=0, bid=0, agent=self)
+        return MarketAction(action_type=ActionType.Skip.value, amount=0, bid=0, agent=self)
 
     def get_action(self, market_history) -> MarketAction:
         market_price_history = [item.price_equilibrium for item in market_history]
@@ -40,7 +40,7 @@ class Agent:
 
         result = self.analyze(perceived_market_history)
 
-        if result.type != ActionType.skip.value:
+        if result.type != ActionType.Skip.value:
             assert result.bid != 0
 
         if result.type == ActionType.Buy.value:
@@ -55,4 +55,9 @@ class Agent:
         return result
 
     def apply_action(self, action: AgentAction):
-        pass
+        if action.type == ActionType.Buy.value:
+            self.inventory += action.amount
+            self.cash -= action.price * action.amount
+        elif action.type == ActionType.Sell.value:
+            self.inventory -= action.amount
+            self.cash += action.price * action.amount

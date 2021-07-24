@@ -4,14 +4,14 @@ from enum import Enum
 class ActionType(Enum):
     Buy = "buy"
     Sell = "sell"
-    skip = "skip"
+    Skip = "skip"
 
 
 class AgentAction:
-    def __init__(self, action_type, amount, bid) -> None:
+    def __init__(self, action_type, amount, price) -> None:
         self.type = action_type
         self.amount = amount
-        self.bid = bid
+        self.price = price
 
 
 class MarketAction:
