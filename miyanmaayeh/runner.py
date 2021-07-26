@@ -4,7 +4,7 @@ import seaborn as sns
 from tqdm import tqdm
 
 from miyanmaayeh.action import ActionType
-from miyanmaayeh.agent import Agent, FundamentalistAgent
+from miyanmaayeh.agent import Agent, ContrarianAgent, FundamentalistAgent, TechnicalAnalystAgent
 from miyanmaayeh.history import RunHistory
 from miyanmaayeh.market import Market
 
@@ -18,14 +18,18 @@ class Runner:
 
         fundamentalist_agent_count = config.get("fundamentalist_count")
         self.initialize_agents(FundamentalistAgent, fundamentalist_agent_count)
+        contrarian_agent_count = config.get("contrarian_count")
+        self.initialize_agents(ContrarianAgent, contrarian_agent_count)
+        technical_analyst_agent_count = config.get("technical_analyst_count")
+        self.initialize_agents(TechnicalAnalystAgent, technical_analyst_agent_count)
 
         self.plot_dir = config.get("plot_dir")
 
     def initialize_agents(self, agent_cls: Agent, cnt):
         for _ in range(cnt):
-            confidence_level = np.random.normal(0.5, 0.5 / 3)
-            if confidence_level > 1:
-                confidence_level = 1
+            confidence_level = np.random.normal(0.5, 0.5 / 2)
+            if confidence_level > 0.9:
+                confidence_level = 0.9
             if confidence_level < 0:
                 confidence_level = 0
 
@@ -125,9 +129,16 @@ class Runner:
 
     def generate_price_plot(self):
         prices = [item.price for item in self.history]
+        ticks = np.arange(0, len(prices))
 
-        plt.figure("Market Price")
-        fig = sns.lineplot(x=np.arange(0, len(prices)), y=prices)
+        z = np.polyfit(ticks, prices, 1)
+        trendline_func = np.poly1d(z)
+        trendline = [trendline_func(tick) for tick in ticks]
+
+        plt.figure("Market Price", figsize=(12, 8))
+        fig = sns.lineplot(x=ticks, y=prices)
+        sns.lineplot(x=ticks, y=trendline, label="Trendline", color="green", legend="brief")
+
         fig.set(xlabel="Time", ylabel="Price", title="Market Price")
 
         plt.savefig(self.plot_dir + "prices.png")
