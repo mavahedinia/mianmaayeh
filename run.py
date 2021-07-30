@@ -13,6 +13,14 @@ def main():
         "fundamentalist_count": 20,
         "contrarian_count": 20,
         "technical_analyst_count": 20,
+        "random_count": 20,
+        "agents-config": {
+            "production-average": 1000,
+            "production-std": 200,
+            "producers-percentage": 20,
+            "income-alpha": 4,
+            "income-beta": 1500,
+        },
     }
 
     runner = Runner(config=config)

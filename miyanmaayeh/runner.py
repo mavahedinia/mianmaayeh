@@ -4,7 +4,7 @@ import seaborn as sns
 from tqdm import tqdm
 
 from miyanmaayeh.action import ActionType
-from miyanmaayeh.agent import Agent, ContrarianAgent, FundamentalistAgent, TechnicalAnalystAgent
+from miyanmaayeh.agent import Agent, ContrarianAgent, FundamentalistAgent, RandomAgent, TechnicalAnalystAgent
 from miyanmaayeh.history import RunHistory
 from miyanmaayeh.market import Market
 
@@ -16,16 +16,19 @@ class Runner:
         self.history = []
         self.take_snapshots_in = config.get("snapshots_in")
 
-        fundamentalist_agent_count = config.get("fundamentalist_count")
-        self.initialize_agents(FundamentalistAgent, fundamentalist_agent_count)
-        contrarian_agent_count = config.get("contrarian_count")
+        agents_config = config.get("agents-config", {})
+        fundamentalist_agent_count = config.get("fundamentalist_count", 0)
+        self.initialize_agents(FundamentalistAgent, fundamentalist_agent_count, agents_config)
+        contrarian_agent_count = config.get("contrarian_count", 0)
         self.initialize_agents(ContrarianAgent, contrarian_agent_count)
-        technical_analyst_agent_count = config.get("technical_analyst_count")
+        technical_analyst_agent_count = config.get("technical_analyst_count", 0)
         self.initialize_agents(TechnicalAnalystAgent, technical_analyst_agent_count)
+        random_agent_count = config.get("random_count", 0)
+        self.initialize_agents(RandomAgent, random_agent_count)
 
         self.plot_dir = config.get("plot_dir")
 
-    def initialize_agents(self, agent_cls: Agent, cnt):
+    def initialize_agents(self, agent_cls: Agent, cnt, agents_config):
         for _ in range(cnt):
             confidence_level = np.random.normal(0.5, 0.5 / 2)
             if confidence_level > 0.9:
@@ -33,12 +36,17 @@ class Runner:
             if confidence_level < 0:
                 confidence_level = 0
 
-            production = np.random.normal(1000, 200)
-            is_producer = np.random.uniform(0, 100) <= 20
+            production_avg = agents_config.get("production-average", 1000)
+            production_std = agents_config.get("production-std", 200)
+            producers_count = agents_config.get("producers-percentage", 20)
+            production = np.random.normal(production_avg, production_std)
+            is_producer = np.random.uniform(0, 100) <= producers_count
             if production < 0 or not is_producer:
                 production = 0
 
-            income = np.random.gamma(4, 1500)
+            income_alpha = agents_config.get("income-alpha", 4)
+            income_beta = agents_config.get("income-beta", 1500)
+            income = np.random.gamma(income_alpha, income_beta)
             if income < 1000:
                 income = 1000
 

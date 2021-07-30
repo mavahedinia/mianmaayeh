@@ -7,6 +7,8 @@ from miyanmaayeh.history import AgentHistory, MarketHistory
 
 
 class Agent:
+    GROUP = "Agent"
+
     def __init__(self, confidence_level, production, inventory, income, cash):
         self.confidence_level = confidence_level
         self.noise_generator = np.random.default_rng(int(time.time() * 10000))
@@ -72,6 +74,8 @@ class Agent:
 
 
 class FundamentalistAgent(Agent):
+    GROUP = "Fundamentalist"
+
     def analyze(self, market_history: MarketHistory):
         market_indicator = np.random.rand(1) * 3
         bid = np.random.uniform(50, 100)
@@ -101,6 +105,7 @@ class FundamentalistAgent(Agent):
 
 
 class ContrarianAgent(Agent):
+    GROUP = "Contrarian"
     EPS = 0.05
 
     def analyze(self, market_history: MarketHistory) -> MarketAction:
@@ -135,6 +140,7 @@ class ContrarianAgent(Agent):
 
 
 class TechnicalAnalystAgent(Agent):
+    GROUP = "Technical"
     EPS = 0.05
 
     @staticmethod
@@ -198,6 +204,39 @@ class TechnicalAnalystAgent(Agent):
                 amount=0,
                 bid=bid,
             )
+        return MarketAction(
+            ActionType.Skip.value,
+            agent=self,
+            amount=0,
+            bid=0,
+        )
+
+
+class RandomAgent(Agent):
+    GROUP = "Random"
+
+    def analyze(self, market_history: MarketHistory) -> MarketAction:
+        market_indicator = np.random.rand(1) * 3
+        market_prices = [item.price_equilibrium for item in market_history]
+        min_price = 50 if len(market_history) == 0 else min(market_prices)
+        max_price = 150 if len(market_history) == 0 else max(market_history)
+        bid = np.random.uniform(min_price, max_price)
+
+        if market_indicator > 2:
+            return MarketAction(
+                action_type=ActionType.Buy.value,
+                agent=self,
+                amount=0,
+                bid=bid,
+            )
+        if market_indicator < 1:
+            return MarketAction(
+                action_type=ActionType.Buy.value,
+                agent=self,
+                amount=0,
+                bid=bid,
+            )
+
         return MarketAction(
             ActionType.Skip.value,
             agent=self,
