@@ -45,11 +45,11 @@ class Runner:
 
     def initialize_agents(self, agent_cls: Agent, cnt, agents_config):
         for _ in range(cnt):
-            confidence_level = np.random.normal(0.5, 0.5 / 2)
+            confidence_level = np.random.normal(0.5, 0.5 / 3)
             if confidence_level > 0.9:
                 confidence_level = 0.9
-            if confidence_level < 0:
-                confidence_level = 0
+            if confidence_level < 0.1:
+                confidence_level = 0.1
 
             production_avg = agents_config.get("production-average", 1000)
             production_std = agents_config.get("production-std", 200)
