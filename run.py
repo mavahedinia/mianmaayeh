@@ -14,6 +14,7 @@ def main():
         "contrarian_count": 20,
         "technical_analyst_count": 20,
         "random_count": 20,
+        "long_term_buyer_count": 20,
         "agents-config": {
             "production-average": 1000,
             "production-std": 200,

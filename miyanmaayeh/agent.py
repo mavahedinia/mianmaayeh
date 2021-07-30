@@ -219,7 +219,7 @@ class RandomAgent(Agent):
         market_indicator = np.random.rand(1) * 3
         market_prices = [item.price_equilibrium for item in market_history]
         min_price = 50 if len(market_history) == 0 else min(market_prices)
-        max_price = 150 if len(market_history) == 0 else max(market_history)
+        max_price = 150 if len(market_history) == 0 else max(market_prices)
         bid = np.random.uniform(min_price, max_price)
 
         if market_indicator > 2:
@@ -242,4 +242,36 @@ class RandomAgent(Agent):
             agent=self,
             amount=0,
             bid=0,
+        )
+
+
+class LongTermBuyerAgent(Agent):
+    GROUP = "Long Term Buyer"
+    BUYING_STATE = True
+
+    def analyze(self, market_history: MarketHistory) -> MarketAction:
+        if not self.BUYING_STATE:
+            return MarketAction(
+                ActionType.Skip.value,
+                agent=self,
+                amount=0,
+                bid=0,
+            )
+
+        should_sell = np.random.uniform(0, 1000) < 2
+        bid = np.random.uniform(50, 150) if len(market_history) == 0 else market_history[-1].price_equilibrium
+        if should_sell:
+            self.BUYING_STATE = False
+            return MarketAction(
+                ActionType.Sell.value,
+                agent=self,
+                amount=0,
+                bid=bid,
+            )
+
+        return MarketAction(
+            ActionType.Buy.value,
+            agent=self,
+            amount=0,
+            bid=bid,
         )

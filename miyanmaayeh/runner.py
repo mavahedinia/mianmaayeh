@@ -4,7 +4,7 @@ import seaborn as sns
 from tqdm import tqdm
 
 from miyanmaayeh.action import ActionType
-from miyanmaayeh.agent import Agent, ContrarianAgent, FundamentalistAgent, RandomAgent, TechnicalAnalystAgent
+from miyanmaayeh.agent import Agent, ContrarianAgent, FundamentalistAgent, LongTermBuyerAgent, RandomAgent, TechnicalAnalystAgent
 from miyanmaayeh.history import RunHistory
 from miyanmaayeh.market import Market
 
@@ -20,11 +20,13 @@ class Runner:
         fundamentalist_agent_count = config.get("fundamentalist_count", 0)
         self.initialize_agents(FundamentalistAgent, fundamentalist_agent_count, agents_config)
         contrarian_agent_count = config.get("contrarian_count", 0)
-        self.initialize_agents(ContrarianAgent, contrarian_agent_count)
+        self.initialize_agents(ContrarianAgent, contrarian_agent_count, agents_config)
         technical_analyst_agent_count = config.get("technical_analyst_count", 0)
-        self.initialize_agents(TechnicalAnalystAgent, technical_analyst_agent_count)
+        self.initialize_agents(TechnicalAnalystAgent, technical_analyst_agent_count, agents_config)
         random_agent_count = config.get("random_count", 0)
-        self.initialize_agents(RandomAgent, random_agent_count)
+        self.initialize_agents(RandomAgent, random_agent_count, agents_config)
+        long_term_buyer_agent_count = config.get("long_term_buyer_count", 0)
+        self.initialize_agents(LongTermBuyerAgent, long_term_buyer_agent_count, agents_config)
 
         self.plot_dir = config.get("plot_dir")
 
