@@ -4,7 +4,15 @@ import seaborn as sns
 from tqdm import tqdm
 
 from miyanmaayeh.action import ActionType
-from miyanmaayeh.agent import Agent, ContrarianAgent, FundamentalistAgent, LongTermBuyerAgent, RandomAgent, TechnicalAnalystAgent
+from miyanmaayeh.agent import (
+    Agent,
+    ContrarianAgent,
+    CopyCatAgent,
+    FundamentalistAgent,
+    LongTermBuyerAgent,
+    RandomAgent,
+    TechnicalAnalystAgent,
+)
 from miyanmaayeh.history import RunHistory
 from miyanmaayeh.market import Market
 
@@ -17,16 +25,19 @@ class Runner:
         self.take_snapshots_in = config.get("snapshots_in")
 
         agents_config = config.get("agents-config", {})
-        fundamentalist_agent_count = config.get("fundamentalist_count", 0)
+        total_agents = config.get("total_agents", 0)
+        fundamentalist_agent_count = int(total_agents * config.get("fundamentalist_count", 0))
         self.initialize_agents(FundamentalistAgent, fundamentalist_agent_count, agents_config)
-        contrarian_agent_count = config.get("contrarian_count", 0)
+        contrarian_agent_count = int(total_agents * config.get("contrarian_count", 0))
         self.initialize_agents(ContrarianAgent, contrarian_agent_count, agents_config)
-        technical_analyst_agent_count = config.get("technical_analyst_count", 0)
+        technical_analyst_agent_count = int(total_agents * config.get("technical_analyst_count", 0))
         self.initialize_agents(TechnicalAnalystAgent, technical_analyst_agent_count, agents_config)
-        random_agent_count = config.get("random_count", 0)
+        random_agent_count = int(total_agents * config.get("random_count", 0))
         self.initialize_agents(RandomAgent, random_agent_count, agents_config)
-        long_term_buyer_agent_count = config.get("long_term_buyer_count", 0)
+        long_term_buyer_agent_count = int(total_agents * config.get("long_term_buyer_count", 0))
         self.initialize_agents(LongTermBuyerAgent, long_term_buyer_agent_count, agents_config)
+        copycat_agent_count = int(total_agents * config.get("copycat_count", 0))
+        self.initialize_agents(CopyCatAgent, copycat_agent_count, agents_config)
 
         self.plot_dir = config.get("plot_dir")
 
@@ -49,8 +60,8 @@ class Runner:
             income_alpha = agents_config.get("income-alpha", 4)
             income_beta = agents_config.get("income-beta", 1500)
             income = np.random.gamma(income_alpha, income_beta)
-            if income < 1000:
-                income = 1000
+            # if income < 1000:
+            #     income = 1000
 
             agent = agent_cls(
                 confidence_level=confidence_level,
@@ -69,22 +80,30 @@ class Runner:
 
             self.run_iteration(tick)
 
+            self.sort_agents_by_welfare()
             self.record_history(tick)
+
+    def sort_agents_by_welfare(self):
+        market_price = self.market.history[-1].price_equilibrium
+        self.agents = sorted(self.agents, key=lambda x: (-market_price * x.inventory + x.cash) * (x.GROUP != "Copycat"))
 
     def run_iteration(self, tick):
         market_history = self.market.get_history()
+        best_agents = self.agents[:10]
 
         for agent in self.agents:
-            action = agent.get_action(market_history)
+            action = agent.get_action(market_history, best_agents=best_agents)
             self.market.add_action(action)
 
         self.market.allocate_commodity()
 
     def record_history(self, tick):
         market_price = self.market.history[-1].price_equilibrium
-        wealth = 0
+        # wealth = 0
+        groups = set([item.GROUP for item in self.agents])
+        wealth = {group: 0 for group in groups}
         for agent in self.agents:
-            wealth += agent.cash + agent.inventory * market_price
+            wealth[agent.GROUP] += agent.cash + agent.inventory * market_price
 
         history = RunHistory(
             volume=self.market.history[-1].volume,
@@ -152,15 +171,20 @@ class Runner:
         fig.set(xlabel="Time", ylabel="Price", title="Market Price")
 
         plt.savefig(self.plot_dir + "prices.png")
+        plt.close("Market Price")
 
     def generate_wealth_plot(self):
         wealth = [item.wealth for item in self.history]
+        groups = set([item.GROUP for item in self.agents])
 
         plt.figure("Society Welfare")
-        fig = sns.lineplot(x=np.arange(0, len(wealth)), y=wealth)
+        for group in groups:
+            y = [item[group] for item in wealth]
+            fig = sns.lineplot(x=np.arange(0, len(y)), y=y, label=group, legend="brief")
         fig.set(xlabel="Time", ylabel="Wealth", title="Society Welfare")
 
         plt.savefig(self.plot_dir + "welfare.png")
+        plt.close("Society Welfare")
 
     def generate_volume_plot(self):
         volume = [item.volume for item in self.history]
@@ -170,6 +194,7 @@ class Runner:
         fig.set(xlabel="Time", ylabel="Quantity", title="Market Volume")
 
         plt.savefig(self.plot_dir + "volume.png")
+        plt.close("Market Volume")
 
     def generate_demand_supply_facet(self):
         for tick in self.take_snapshots_in:
@@ -188,3 +213,4 @@ class Runner:
             fig.set(xlabel="Price", ylabel="Quantity", title=f"Supply - Demand plot at {tick}")
 
             plt.savefig(output_file)
+            plt.close(output_file)
