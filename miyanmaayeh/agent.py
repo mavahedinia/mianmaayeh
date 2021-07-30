@@ -29,10 +29,10 @@ class Agent:
         market_prices = np.array(market_price_history)
         return (noise * market_prices).tolist()
 
-    def analyze(self, market_history: MarketHistory) -> MarketAction:
+    def analyze(self, market_history: MarketHistory, **kwargs) -> MarketAction:
         return MarketAction(action_type=ActionType.Skip.value, amount=0, bid=0, agent=self)
 
-    def get_action(self, market_history) -> MarketAction:
+    def get_action(self, market_history, **kwargs) -> MarketAction:
         market_price_history = [item.price_equilibrium for item in market_history]
         market_price_history = self.apply_perception_on_market_prices(market_price_history)
 
@@ -43,7 +43,7 @@ class Agent:
             for price, item in zip(market_price_history, market_history)
         ]
 
-        result = self.analyze(perceived_market_history)
+        result = self.analyze(perceived_market_history, **kwargs)
 
         if result.type != ActionType.Skip.value:
             assert result.bid != 0
@@ -76,7 +76,7 @@ class Agent:
 class FundamentalistAgent(Agent):
     GROUP = "Fundamentalist"
 
-    def analyze(self, market_history: MarketHistory):
+    def analyze(self, market_history: MarketHistory, **kwargs) -> MarketAction:
         market_indicator = np.random.rand(1) * 3
         bid = np.random.uniform(50, 100)
         if len(market_history) > 0:
@@ -108,7 +108,7 @@ class ContrarianAgent(Agent):
     GROUP = "Contrarian"
     EPS = 0.05
 
-    def analyze(self, market_history: MarketHistory) -> MarketAction:
+    def analyze(self, market_history: MarketHistory, **kwargs) -> MarketAction:
         if len(market_history) > 0:
             total_actions = market_history[-1].buy_action_count + market_history[-1].sell_action_count
             market_indicator = (market_history[-1].buy_action_count - market_history[-1].sell_action_count) / total_actions
@@ -177,7 +177,7 @@ class TechnicalAnalystAgent(Agent):
             out += offset * scaling_factors[1:]
         return out
 
-    def analyze(self, market_history: MarketHistory) -> MarketAction:
+    def analyze(self, market_history: MarketHistory, **kwargs) -> MarketAction:
 
         if len(market_history) > 0:
             prices_list = [item.price_equilibrium for item in market_history]
@@ -215,7 +215,7 @@ class TechnicalAnalystAgent(Agent):
 class RandomAgent(Agent):
     GROUP = "Random"
 
-    def analyze(self, market_history: MarketHistory) -> MarketAction:
+    def analyze(self, market_history: MarketHistory, **kwargs) -> MarketAction:
         market_indicator = np.random.rand(1) * 3
         market_prices = [item.price_equilibrium for item in market_history]
         min_price = 50 if len(market_history) == 0 else min(market_prices)
@@ -249,7 +249,7 @@ class LongTermBuyerAgent(Agent):
     GROUP = "Long Term Buyer"
     BUYING_STATE = True
 
-    def analyze(self, market_history: MarketHistory) -> MarketAction:
+    def analyze(self, market_history: MarketHistory, **kwargs) -> MarketAction:
         if not self.BUYING_STATE:
             return MarketAction(
                 ActionType.Skip.value,
@@ -258,7 +258,7 @@ class LongTermBuyerAgent(Agent):
                 bid=0,
             )
 
-        should_sell = np.random.uniform(0, 1000) < 2
+        should_sell = np.random.uniform(0, 100) < 2
         bid = np.random.uniform(50, 150) if len(market_history) == 0 else market_history[-1].price_equilibrium
         if should_sell:
             self.BUYING_STATE = False
@@ -274,4 +274,26 @@ class LongTermBuyerAgent(Agent):
             agent=self,
             amount=0,
             bid=bid,
+        )
+
+
+class CopyCatAgent(Agent):
+    GROUP = "Copycat"
+
+    def analyze(self, market_history: MarketHistory, best_agents, **kwargs) -> MarketAction:
+        prophet = np.random.choice(best_agents)
+        if len(prophet.history) > 0:
+            copied_action_history = prophet.history[-1]
+        else:
+            copied_action_history = MarketAction(
+                action_type=ActionType.Skip.value,
+                amount=0,
+                bid=0,
+                agent=self,
+            )
+        return MarketAction(
+            copied_action_history.type,
+            agent=self,
+            amount=0,
+            bid=copied_action_history.bid,
         )
