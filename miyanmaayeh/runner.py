@@ -1,3 +1,5 @@
+import math
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -195,20 +197,26 @@ class Runner:
         plt.close("Market Volume")
 
     def generate_demand_supply_facet(self):
-        for tick in self.take_snapshots_in:
-            if tick >= len(self.history):
-                break
+        plt.figure("Supply Demand")
 
-            output_file = self.plot_dir + f"sd_{tick}"
+        width = 2
+        height = int(math.floor(float(len(self.take_snapshots_in)) / float(width)))
+        fig, ax = plt.subplots(height, width, figsize=(25, 25))
+        fig.suptitle("Supply Demand plots", fontsize=54)
+
+        for i, tick in enumerate(self.take_snapshots_in):
+            plot_x = int(i // width)
+            plot_y = int(i % width)
+
             demands = self.history[tick].demands
             supplies = self.history[tick].supplies
 
-            plt.figure(output_file)
+            ax[plot_x, plot_y].plot([x[0] for x in demands], [x[1] for x in demands], label="Demand")
+            ax[plot_x, plot_y].plot([x[0] for x in supplies], [x[1] for x in supplies], label="Supply")
+            ax[plot_x, plot_y].legend(loc="upper right", fontsize=14)
+            ax[plot_x, plot_y].set_title(f"Iteration {tick + 1}", fontsize=24)
+            ax[plot_x, plot_y].set_xlabel("Price", fontsize=16)
+            ax[plot_x, plot_y].set_ylabel("Quantity", fontsize=16)
 
-            fig = sns.lineplot(x=[x[0] for x in demands], y=[x[1] for x in demands], legend="brief", label="Demand")
-            sns.lineplot(x=[x[0] for x in supplies], y=[x[1] for x in supplies], label="Supply")
-
-            fig.set(xlabel="Price", ylabel="Quantity", title=f"Supply - Demand plot at {tick}")
-
-            plt.savefig(output_file)
-            plt.close(output_file)
+        plt.savefig(self.plot_dir + "supply-demand.png")
+        plt.close("Supply Demand")
