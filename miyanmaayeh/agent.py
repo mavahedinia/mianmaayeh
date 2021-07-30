@@ -29,6 +29,9 @@ class Agent:
         market_prices = np.array(market_price_history)
         return (noise * market_prices).tolist()
 
+    def _random_bid(self, mn=100, mx=300):
+        return np.random.uniform(mn, mx)
+
     def analyze(self, market_history: MarketHistory, **kwargs) -> MarketAction:
         return MarketAction(action_type=ActionType.Skip.value, amount=0, bid=0, agent=self)
 
@@ -52,7 +55,7 @@ class Agent:
             available_money = int(self.confidence_level * self.cash)
             result.amount = available_money // result.bid
         elif result.type == ActionType.Sell.value:
-            result.amount = int(self.confidence_level * self.inventory)
+            result.amount = self.confidence_level * self.inventory
 
         if result.amount <= 0:
             result.type = ActionType.Skip.value
@@ -78,9 +81,10 @@ class FundamentalistAgent(Agent):
 
     def analyze(self, market_history: MarketHistory, **kwargs) -> MarketAction:
         market_indicator = np.random.rand(1) * 3
-        bid = np.random.uniform(50, 100)
         if len(market_history) > 0:
             bid = market_history[-1].price_equilibrium
+        else:
+            bid = self._random_bid()
 
         if market_indicator > 2:
             return MarketAction(
@@ -115,7 +119,7 @@ class ContrarianAgent(Agent):
             bid = market_history[-1].price_equilibrium
         else:
             market_indicator = np.random.uniform(-2, 2)
-            bid = np.random.uniform(50, 100)
+            bid = self._random_bid()
 
         if market_indicator > self.EPS:
             return MarketAction(
@@ -188,7 +192,7 @@ class TechnicalAnalystAgent(Agent):
             bid = market_history[-1].price_equilibrium
         else:
             MACD_ind = np.random.uniform(-1, 1)
-            bid = np.random.uniform(50, 100)
+            bid = self._random_bid()
 
         if MACD_ind > self.EPS:
             return MarketAction(
@@ -218,9 +222,14 @@ class RandomAgent(Agent):
     def analyze(self, market_history: MarketHistory, **kwargs) -> MarketAction:
         market_indicator = np.random.rand(1) * 3
         market_prices = [item.price_equilibrium for item in market_history]
-        min_price = 50 if len(market_history) == 0 else min(market_prices)
-        max_price = 150 if len(market_history) == 0 else max(market_prices)
-        bid = np.random.uniform(min_price, max_price)
+        if len(market_history) > 0:
+            min_price = min(market_prices)
+            max_price = max(market_prices)
+            mu = market_prices[-1]
+            std = min(mu - min_price, max_price - mu) / 3
+            bid = np.random.normal(mu, std)
+        else:
+            bid = self._random_bid()
 
         if market_indicator > 2:
             return MarketAction(
@@ -258,8 +267,8 @@ class LongTermBuyerAgent(Agent):
                 bid=0,
             )
 
-        should_sell = np.random.uniform(0, 100) < 2
-        bid = np.random.uniform(50, 150) if len(market_history) == 0 else market_history[-1].price_equilibrium
+        should_sell = np.random.uniform(0, 1000) < 1
+        bid = self._random_bid() if len(market_history) == 0 else market_history[-1].price_equilibrium
         if should_sell:
             self.BUYING_STATE = False
             return MarketAction(
