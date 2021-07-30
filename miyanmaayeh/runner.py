@@ -60,15 +60,13 @@ class Runner:
             income_alpha = agents_config.get("income-alpha", 4)
             income_beta = agents_config.get("income-beta", 1500)
             income = np.random.gamma(income_alpha, income_beta)
-            # if income < 1000:
-            #     income = 1000
 
             agent = agent_cls(
                 confidence_level=confidence_level,
                 production=production,
-                inventory=0,
+                inventory=agents_config.get("initial-inventory", 0),
                 income=income,
-                cash=0,
+                cash=agents_config.get("initial-cash", 0),
             )
             self.agents.append(agent)
 

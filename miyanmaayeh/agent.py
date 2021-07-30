@@ -111,7 +111,7 @@ class ContrarianAgent(Agent):
     def analyze(self, market_history: MarketHistory, **kwargs) -> MarketAction:
         if len(market_history) > 0:
             total_actions = market_history[-1].buy_action_count + market_history[-1].sell_action_count
-            market_indicator = (market_history[-1].buy_action_count - market_history[-1].sell_action_count) / total_actions
+            market_indicator = (market_history[-1].buy_action_count - market_history[-1].sell_action_count) / max(total_actions, 1)
             bid = market_history[-1].price_equilibrium
         else:
             market_indicator = np.random.uniform(-2, 2)
