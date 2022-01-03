@@ -48,8 +48,9 @@ class Runner:
             agent_count = int(total_agents * config.get(agent_key, 0))
             self.initialize_agents(agent_cls, agent_count, agents_config)
 
-        self.plot_dir = config.get("plot_dir")
-        Path(self.plot_dir).mkdir(parents=True, exist_ok=True)
+        self.plot_dir = config.get("plot_dir", None)
+        if self.plot_dir is not None:
+            Path(self.plot_dir).mkdir(parents=True, exist_ok=True)
 
     def initialize_agents(self, agent_cls: Agent, cnt, agents_config):
         np.random.seed(int(time()))
@@ -157,6 +158,9 @@ class Runner:
         return demand_series, supply_series
 
     def generate_plot(self):
+        if self.plot_dir is None:
+            return
+
         sns.set_theme()
 
         self.generate_price_plot()

@@ -306,3 +306,41 @@ class CopyCatAgent(Agent):
             amount=0,
             bid=copied_action_history.bid,
         )
+
+
+class VerificationAgent(Agent):
+    GROUP = "Verification and Validation"
+
+    def analyze(self, market_history: MarketHistory, **kwargs) -> MarketAction:
+        market_indicator = np.random.uniform(1, 3)
+        market_prices = [item.price_equilibrium for item in market_history]
+        if len(market_history) > 0:
+            min_price = min(market_prices)
+            max_price = max(market_prices)
+            mu = market_prices[-1]
+            std = min(mu - min_price, max_price - mu) / 3
+            bid = np.random.normal(mu, std)
+        else:
+            bid = self._random_bid(self.cash / self.inventory, 3 * self.cash / self.inventory)
+
+        if market_indicator > 2:
+            return MarketAction(
+                action_type=ActionType.Sell.value,
+                agent=self,
+                amount=0,
+                bid=bid,
+            )
+        if market_indicator > 1:
+            return MarketAction(
+                action_type=ActionType.Buy.value,
+                agent=self,
+                amount=0,
+                bid=bid,
+            )
+
+        return MarketAction(
+            ActionType.Skip.value,
+            agent=self,
+            amount=0,
+            bid=0,
+        )
