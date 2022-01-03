@@ -220,7 +220,7 @@ class RandomAgent(Agent):
     GROUP = "Random"
 
     def analyze(self, market_history: MarketHistory, **kwargs) -> MarketAction:
-        market_indicator = np.random.rand(1) * 3
+        market_indicator = np.random.uniform(0, 3)
         market_prices = [item.price_equilibrium for item in market_history]
         if len(market_history) > 0:
             min_price = min(market_prices)
@@ -233,12 +233,12 @@ class RandomAgent(Agent):
 
         if market_indicator > 2:
             return MarketAction(
-                action_type=ActionType.Buy.value,
+                action_type=ActionType.Sell.value,
                 agent=self,
                 amount=0,
                 bid=bid,
             )
-        if market_indicator < 1:
+        if market_indicator > 1:
             return MarketAction(
                 action_type=ActionType.Buy.value,
                 agent=self,
