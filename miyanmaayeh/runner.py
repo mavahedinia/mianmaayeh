@@ -1,4 +1,7 @@
 import math
+from time import time
+from pathlib import Path
+
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,9 +17,20 @@ from miyanmaayeh.agent import (
     LongTermBuyerAgent,
     RandomAgent,
     TechnicalAnalystAgent,
+    VerificationAgent,
 )
 from miyanmaayeh.history import RunHistory
 from miyanmaayeh.market import Market
+
+agent_key_to_class = {
+    "fundamentalist_count": FundamentalistAgent,
+    "contrarian_count": ContrarianAgent,
+    "technical_analyst_count": TechnicalAnalystAgent,
+    "random_count": RandomAgent,
+    "long_term_buyer_count": LongTermBuyerAgent,
+    "copycat_count": CopyCatAgent,
+    "verifier_count": VerificationAgent,
+}
 
 
 class Runner:
@@ -28,22 +42,17 @@ class Runner:
 
         agents_config = config.get("agents-config", {})
         total_agents = config.get("total_agents", 0)
-        fundamentalist_agent_count = int(total_agents * config.get("fundamentalist_count", 0))
-        self.initialize_agents(FundamentalistAgent, fundamentalist_agent_count, agents_config)
-        contrarian_agent_count = int(total_agents * config.get("contrarian_count", 0))
-        self.initialize_agents(ContrarianAgent, contrarian_agent_count, agents_config)
-        technical_analyst_agent_count = int(total_agents * config.get("technical_analyst_count", 0))
-        self.initialize_agents(TechnicalAnalystAgent, technical_analyst_agent_count, agents_config)
-        random_agent_count = int(total_agents * config.get("random_count", 0))
-        self.initialize_agents(RandomAgent, random_agent_count, agents_config)
-        long_term_buyer_agent_count = int(total_agents * config.get("long_term_buyer_count", 0))
-        self.initialize_agents(LongTermBuyerAgent, long_term_buyer_agent_count, agents_config)
-        copycat_agent_count = int(total_agents * config.get("copycat_count", 0))
-        self.initialize_agents(CopyCatAgent, copycat_agent_count, agents_config)
+
+        for agent_key in agent_key_to_class:
+            agent_cls = agent_key_to_class[agent_key]
+            agent_count = int(total_agents * config.get(agent_key, 0))
+            self.initialize_agents(agent_cls, agent_count, agents_config)
 
         self.plot_dir = config.get("plot_dir")
+        Path(self.plot_dir).mkdir(parents=True, exist_ok=True)
 
     def initialize_agents(self, agent_cls: Agent, cnt, agents_config):
+        np.random.seed(int(time()))
         for _ in range(cnt):
             confidence_level = np.random.normal(0.5, 0.5 / 3)
             if confidence_level > 0.9:
@@ -166,7 +175,13 @@ class Runner:
 
         plt.figure("Market Price", figsize=(12, 8))
         fig = sns.lineplot(x=ticks, y=prices)
-        sns.lineplot(x=ticks, y=trendline, label="Trendline", color="green", legend="brief")
+        sns.lineplot(
+            x=ticks,
+            y=trendline,
+            label=f"Trendline - y = {trendline_func.coefficients[0]:0.4f}x + {trendline_func.coefficients[1]:0.4f}",
+            color="green",
+            legend="brief",
+        )
 
         fig.set(xlabel="Time", ylabel="Price", title="Market Price")
 
@@ -214,7 +229,7 @@ class Runner:
             ax[plot_x, plot_y].plot([x[0] for x in demands], [x[1] for x in demands], label="Demand")
             ax[plot_x, plot_y].plot([x[0] for x in supplies], [x[1] for x in supplies], label="Supply")
             ax[plot_x, plot_y].legend(loc="upper right", fontsize=14)
-            ax[plot_x, plot_y].set_title(f"Iteration {tick + 1}", fontsize=24)
+            ax[plot_x, plot_y].set_title(f"Iteration {tick + 1} - Price = {self.history[tick].price:.2f}", fontsize=24)
             ax[plot_x, plot_y].set_xlabel("Price", fontsize=16)
             ax[plot_x, plot_y].set_ylabel("Quantity", fontsize=16)
 
