@@ -35,28 +35,36 @@ agent_key_to_class = {
 
 class Runner:
     def __init__(self, config) -> None:
-        self.market_options = config.get("market-options", {})
         market_cls = config.get("market-class", Market)
+        self.market_options = config.get("market-options", {})
         self.market = market_cls(**self.market_options)
+
         self.agents = []
         self.history = []
         self.take_snapshots_in = config.get("snapshots_in")
 
-        agents_config = config.get("agents-config", {})
-        total_agents = config.get("total_agents", 0)
+        self.agents_config = config.get("agents-config", {})
+        initial_agents = config.get("initial_agents", 0)
+        new_agents = config.get("new_agents", 0)
+        avg_wait_time = config.get("average_time_to_add_agents", 0.0001)
 
         for agent_key in agent_key_to_class:
             agent_cls = agent_key_to_class[agent_key]
-            agent_count = int(total_agents * config.get(agent_key, 0))
-            self.initialize_agents(agent_cls, agent_count, agents_config)
+            agent_count = int(initial_agents * config.get(agent_key, 0))
+            self.initialize_agents(agent_cls, agent_count, self.agents_config, [0] * agent_count)
+
+            # Compose new agents
+            agent_count = int(new_agents * config.get(agent_key, 0))
+            activation_times = np.random.exponential(1 / avg_wait_time, size=agent_count)
+            self.initialize_agents(agent_cls, agent_count, self.agents_config, activation_times)
 
         self.plot_dir = config.get("plot_dir", None)
         if self.plot_dir is not None:
             Path(self.plot_dir).mkdir(parents=True, exist_ok=True)
 
-    def initialize_agents(self, agent_cls: Agent, cnt, agents_config):
+    def initialize_agents(self, agent_cls: Agent, cnt, agents_config, activation_times):
         np.random.seed(int(time()))
-        for _ in range(cnt):
+        for i in range(cnt):
             confidence_level = np.random.normal(0.5, 0.5 / 3)
             if confidence_level > 0.9:
                 confidence_level = 0.9
@@ -81,6 +89,7 @@ class Runner:
                 inventory=agents_config.get("initial-inventory", 0),
                 income=income,
                 cash=agents_config.get("initial-cash", 0),
+                activation_time=activation_times[i],
             )
             self.agents.append(agent)
 
@@ -88,7 +97,7 @@ class Runner:
         for tick in tqdm(range(ticks)):
             self.market.new_tick()
             for agent in self.agents:
-                agent.tick()
+                agent.tick(tick)
 
             self.run_iteration(tick)
 
@@ -104,6 +113,9 @@ class Runner:
         best_agents = self.agents[:10]
 
         for agent in self.agents:
+            if not agent.is_active:
+                continue
+
             action = agent.get_action(market_history, best_agents=best_agents)
             self.market.add_action(action)
 
@@ -115,7 +127,9 @@ class Runner:
         groups = set([item.GROUP for item in self.agents])
         wealth = {group: 0 for group in groups}
         for agent in self.agents:
-            wealth[agent.GROUP] += agent.cash
+            if not agent.is_active:
+                continue
+            wealth[agent.GROUP] += agent.cash + agent.inventory * market_price
 
         history = RunHistory(
             volume=self.market.history[-1].volume,

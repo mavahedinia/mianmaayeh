@@ -9,7 +9,7 @@ from miyanmaayeh.history import AgentHistory, MarketHistory
 class Agent:
     GROUP = "Agent"
 
-    def __init__(self, confidence_level, production, inventory, income, cash):
+    def __init__(self, confidence_level, production, inventory, income, cash, activation_time=0):
         self.confidence_level = confidence_level
         self.noise_generator = np.random.default_rng(int(time.time() * 10000))
         self.ng_std = (1 - self.confidence_level) / 6
@@ -17,11 +17,17 @@ class Agent:
         self.inventory = inventory
         self.income = income
         self.cash = cash
+        self.is_active = False
+        self.activation_time = activation_time
         self.history = []
 
-    def tick(self):
-        self.cash += self.income
-        self.inventory += self.production
+    def tick(self, iteration):
+        if iteration >= self.activation_time:
+            self.is_active = True
+
+        if self.is_active:
+            self.cash += self.income
+            self.inventory += self.production
 
     def apply_perception_on_market_prices(self, market_price_history):
         sz = len(market_price_history)
