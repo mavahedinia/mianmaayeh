@@ -35,7 +35,9 @@ agent_key_to_class = {
 
 class Runner:
     def __init__(self, config) -> None:
-        self.market = Market()
+        self.market_options = config.get("market-options", {})
+        market_cls = config.get("market-class", Market)
+        self.market = market_cls(**self.market_options)
         self.agents = []
         self.history = []
         self.take_snapshots_in = config.get("snapshots_in")
@@ -113,7 +115,7 @@ class Runner:
         groups = set([item.GROUP for item in self.agents])
         wealth = {group: 0 for group in groups}
         for agent in self.agents:
-            wealth[agent.GROUP] += agent.cash + agent.inventory * market_price
+            wealth[agent.GROUP] += agent.cash
 
         history = RunHistory(
             volume=self.market.history[-1].volume,
@@ -121,6 +123,7 @@ class Runner:
             buy_actions=self.market.history[-1].buy_action_count,
             price=market_price,
             wealth=wealth,
+            market_profit=self.market.history[-1].profit,
         )
 
         if tick in self.take_snapshots_in:

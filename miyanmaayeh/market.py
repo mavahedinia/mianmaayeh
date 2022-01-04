@@ -5,7 +5,7 @@ from miyanmaayeh.history import MarketHistory
 
 
 class Market:
-    def __init__(self, initial_price=1000) -> None:
+    def __init__(self, initial_price=1000, *args, **kwargs) -> None:
         self.initial_price = initial_price
         self.history = []
         self.actions = []
@@ -18,6 +18,12 @@ class Market:
 
     def add_action(self, action: MarketAction):
         self.actions.append(action)
+
+    def calculate_buy_price(self, market_price):
+        return market_price
+
+    def calculate_sell_price(self, market_price):
+        return market_price
 
     def calculate_market_price_equilibrium(self):
         sorted_actions = sorted(self.actions, key=lambda x: -x.bid if x.type == ActionType.Buy.value else x.bid)
@@ -59,8 +65,12 @@ class Market:
 
         market_price = self.calculate_market_price()
         market_q = 0
+        market_profit = 0
 
-        history = MarketHistory(market_price, len(sell_actions), len(buy_actions), 0)
+        buyer_price = self.calculate_sell_price(market_price)
+        seller_price = self.calculate_buy_price(market_price)
+
+        history = MarketHistory(market_price, len(sell_actions), len(buy_actions), 0, 0)
 
         sell_action_idx = 0
         buy_action_idx = 0
@@ -70,23 +80,26 @@ class Market:
                 break
             if buy_action_idx >= len(buy_actions):
                 break
-            if sell_actions[sell_action_idx].bid > market_price or buy_actions[buy_action_idx].bid < market_price:
+            if sell_actions[sell_action_idx].bid > buyer_price:
+                break
+            if buy_actions[buy_action_idx].bid < seller_price:
                 break
 
             amount = min(sell_actions[sell_action_idx].amount, buy_actions[buy_action_idx].amount)
             market_q += amount
+            market_profit += amount * abs(seller_price - buyer_price)
 
             buyer_agent_action = AgentAction(
                 action_type=ActionType.Buy.value,
                 amount=amount,
-                price=market_price,
+                price=buyer_price,
             )
             buy_actions[buy_action_idx].agent.apply_action(buyer_agent_action)
 
             seller_agent_action = AgentAction(
                 action_type=ActionType.Sell.value,
                 amount=amount,
-                price=market_price,
+                price=seller_price,
             )
             sell_actions[sell_action_idx].agent.apply_action(seller_agent_action)
 
@@ -99,4 +112,48 @@ class Market:
                 buy_action_idx += 1
 
         history.volume = market_q
+        history.profit = market_profit
         self.history.append(history)
+
+
+class MarketWithFriction(Market):
+    EPS = 0.01
+
+    def __init__(self, friction_rate, initial_price=1000, *args, **kwargs) -> None:
+        self.friction_rate = friction_rate
+        self.initial_price = initial_price
+        self.history = []
+        self.actions = []
+
+    def calculate_buy_price(self, market_price):
+        return market_price * (1 - self.friction_rate / 2)
+
+    def calculate_sell_price(self, market_price):
+        return market_price * (1 + self.friction_rate / 2)
+
+    def calculate_qs(self, market_price):
+        q_s, q_d = 0, 0
+        q_s_price = self.calculate_buy_price(market_price)
+        q_d_price = self.calculate_sell_price(market_price)
+
+        for action in self.actions:
+            if action.type == ActionType.Buy.value and action.bid >= q_d_price:
+                q_d += action.amount
+            elif action.type == ActionType.Sell.value and action.bid <= q_s_price:
+                q_s += action.amount
+
+        return q_s, q_d
+
+    def calculate_market_price(self):
+        L, R = 0, 1e10
+
+        while abs(R - L) >= self.EPS:
+            mid = (L + R) / 2
+            q_s, q_d = self.calculate_qs(mid)
+
+            if q_s > q_d:
+                R = mid
+            else:
+                L = mid
+
+        return L

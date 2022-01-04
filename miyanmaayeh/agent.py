@@ -41,7 +41,11 @@ class Agent:
 
         perceived_market_history = [
             MarketHistory(
-                price_equilibrium=price, sell_actions=item.sell_action_count, buy_actions=item.buy_action_count, volume=item.volume
+                price_equilibrium=price,
+                sell_actions=item.sell_action_count,
+                buy_actions=item.buy_action_count,
+                volume=item.volume,
+                profit=0,
             )
             for price, item in zip(market_price_history, market_history)
         ]
