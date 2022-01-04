@@ -1,7 +1,6 @@
 import math
-from time import time
 from pathlib import Path
-
+from time import time
 
 import matplotlib.pyplot as plt
 import numpy as np

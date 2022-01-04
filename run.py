@@ -1,6 +1,6 @@
 import math
-from miyanmaayeh.market import Market, MarketWithFriction
 
+from miyanmaayeh.market import Market, MarketWithFriction
 from miyanmaayeh.runner import Runner
 
 
@@ -22,17 +22,17 @@ def execute(num):
         "copycat_count": 19.83 / 100,
         # "verifier_count": 100 / 100,
         "agents-config": {
-            "production-average": 3000,
+            "production-average": 1000,
             "production-std": 200,
             "producers-percentage": 20,
-            "income-alpha": 10,
+            "income-alpha": 4,
             "income-beta": 1500,
             "initial-inventory": 1000,
-            "initial-cash": 1000,
+            "initial-cash": 2000,
         },
         "market-class": MarketWithFriction,
         "market-options": {
-            "friction_rate": 0.25,
+            "friction_rate": 0.005,
         },
     }
 
@@ -40,14 +40,10 @@ def execute(num):
     runner.run(run_time)
     runner.generate_plot()
     print(sum([item.market_profit for item in runner.history]))
-    # print(sum([sum() for item in runner.history]))
 
 
 def main():
-    # for ruuuun in range(10):
-    #     execute(ruuuun)
-
-    execute(2)
+    execute(3)
 
 
 if __name__ == "__main__":

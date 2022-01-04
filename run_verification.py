@@ -1,12 +1,12 @@
 import math
-from miyanmaayeh.runner import Runner
+from copy import deepcopy
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
+import seaborn as sns
 
-from copy import deepcopy
+from miyanmaayeh.runner import Runner
 
 PLOT_DIR = "verification/"
 Path(PLOT_DIR).mkdir(parents=True, exist_ok=True)
