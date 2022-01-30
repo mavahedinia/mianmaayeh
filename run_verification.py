@@ -7,6 +7,7 @@ import numpy as np
 import seaborn as sns
 
 from miyanmaayeh.runner import Runner
+from miyanmaayeh.utils import get_steady_state
 
 PLOT_DIR = "verification/"
 Path(PLOT_DIR).mkdir(parents=True, exist_ok=True)
@@ -33,13 +34,15 @@ def generate_plots(runners):
         prices = [item.price for item in runner.history]
         ticks = np.arange(0, len(prices))
 
-        z = np.polyfit(ticks, prices, 1)
+        steady_ticks, steady_prices = get_steady_state(prices)
+
+        z = np.polyfit(steady_ticks, steady_prices, 1)
         trendline_func = np.poly1d(z)
-        trendline = [trendline_func(tick) for tick in ticks]
+        trendline = [trendline_func(tick) for tick in steady_ticks]
 
         ax[plot_x, plot_y].plot(ticks, prices, label="Market Price")
         ax[plot_x, plot_y].plot(
-            ticks,
+            steady_ticks,
             trendline,
             label=f"Trendline - y = {trendline_func.coefficients[0]:0.4f}x + {trendline_func.coefficients[1]:0.4f}",
             color="green",
@@ -61,7 +64,7 @@ def main():
 
     config = {
         "snapshots_in": [i for i in range(0, ITERS, steps)] + [ITERS - 1],
-        "total_agents": 300,
+        "initial_agents": 300,
         "verifier_count": 100 / 100,
         "agents-config": {
             "production-average": 3000,

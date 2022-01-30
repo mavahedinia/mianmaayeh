@@ -8,8 +8,8 @@ import seaborn as sns
 from miyanmaayeh.market import Market, MarketWithFriction
 from miyanmaayeh.runner import Runner
 
-RUNS = 3
-FRICTION_STEPS = 0.02
+RUNS = 5
+FRICTION_STEPS = 0.0005
 
 PLOT_DIR = "reports/"
 Path(PLOT_DIR).mkdir(parents=True, exist_ok=True)
@@ -23,8 +23,8 @@ def execute(num, friction_rate):
     steps = math.ceil(run_time / 5)
 
     config = {
-        "snapshots_in": [i for i in range(0, run_time, steps)] + [run_time - 1],
-        "plot_dir": f"./reports/plots_{friction_rate:.3f}_{num}/",
+        "snapshots_in": [i for i in range(0, run_time - 1, steps)] + [run_time - 1],
+        "plot_dir": f"./reports/plots_{friction_rate:.5f}_{num}/",
         "initial_agents": 25,
         "new_agents": 100,
         "average_time_to_add_agents": 0.5,
@@ -79,7 +79,7 @@ def generate_plot(points):
 
 
 def main():
-    frs = [fr * FRICTION_STEPS for fr in range(int(1 / FRICTION_STEPS))]
+    frs = [fr * FRICTION_STEPS for fr in range(int(0.04 / FRICTION_STEPS))]
 
     for fr in frs:
         for r in range(RUNS):
