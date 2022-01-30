@@ -59,7 +59,7 @@ class Agent:
         result = self.analyze(perceived_market_history, **kwargs)
 
         if result.type != ActionType.Skip.value:
-            assert result.bid != 0
+            assert result.bid > 0
 
         if result.type == ActionType.Buy.value:
             available_money = int(self.confidence_level * self.cash)

@@ -126,10 +126,10 @@ class MarketWithFriction(Market):
         self.actions = []
 
     def calculate_buy_price(self, market_price):
-        return market_price * (1 - self.friction_rate / 2)
+        return market_price * (1 - self.friction_rate)
 
     def calculate_sell_price(self, market_price):
-        return market_price * (1 + self.friction_rate / 2)
+        return market_price
 
     def calculate_qs(self, market_price):
         q_s, q_d = 0, 0
@@ -145,13 +145,13 @@ class MarketWithFriction(Market):
         return q_s, q_d
 
     def calculate_market_price(self):
-        L, R = 0, 1e10
+        L, R = 0.01, 1e10
 
         while abs(R - L) >= self.EPS:
             mid = (L + R) / 2
             q_s, q_d = self.calculate_qs(mid)
 
-            if q_s > q_d:
+            if q_s >= q_d:
                 R = mid
             else:
                 L = mid
