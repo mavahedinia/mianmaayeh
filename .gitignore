@@ -131,4 +131,4 @@ dmypy.json
 plots*/
 verification/
 .DS_Store
-reports/
+reports*/
