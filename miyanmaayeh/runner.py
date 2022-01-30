@@ -20,6 +20,7 @@ from miyanmaayeh.agent import (
 )
 from miyanmaayeh.history import RunHistory
 from miyanmaayeh.market import Market
+from miyanmaayeh.utils import get_steady_state
 
 agent_key_to_class = {
     "fundamentalist_count": FundamentalistAgent,
@@ -185,18 +186,22 @@ class Runner:
 
         self.generate_demand_supply_facet()
 
+        plt.close("all")
+
     def generate_price_plot(self):
         prices = [item.price for item in self.history]
         ticks = np.arange(0, len(prices))
 
-        z = np.polyfit(ticks, prices, 1)
+        steady_ticks, steady_prices = get_steady_state(prices)
+
+        z = np.polyfit(steady_ticks, steady_prices, 1)
         trendline_func = np.poly1d(z)
-        trendline = [trendline_func(tick) for tick in ticks]
+        trendline = [trendline_func(tick) for tick in steady_ticks]
 
         plt.figure("Market Price", figsize=(12, 8))
         fig = sns.lineplot(x=ticks, y=prices)
         sns.lineplot(
-            x=ticks,
+            x=steady_ticks,
             y=trendline,
             label=f"Trendline - y = {trendline_func.coefficients[0]:0.4f}x + {trendline_func.coefficients[1]:0.4f}",
             color="green",
@@ -246,8 +251,10 @@ class Runner:
             demands = self.history[tick].demands
             supplies = self.history[tick].supplies
 
-            ax[plot_x, plot_y].plot([x[0] for x in demands], [x[1] for x in demands], label="Demand")
-            ax[plot_x, plot_y].plot([x[0] for x in supplies], [x[1] for x in supplies], label="Supply")
+            if len(demands) > 0:
+                ax[plot_x, plot_y].plot([x[0] for x in demands], [x[1] for x in demands], label="Demand")
+            if len(supplies) > 0:
+                ax[plot_x, plot_y].plot([x[0] for x in supplies], [x[1] for x in supplies], label="Supply")
             ax[plot_x, plot_y].legend(loc="upper right", fontsize=14)
             ax[plot_x, plot_y].set_title(f"Iteration {tick + 1} - Price = {self.history[tick].price:.2f}", fontsize=24)
             ax[plot_x, plot_y].set_xlabel("Price", fontsize=16)
